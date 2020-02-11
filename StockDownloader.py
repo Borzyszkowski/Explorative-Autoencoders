@@ -6,7 +6,7 @@ import os
 
 keys = ['UYC4Z4XMXL3ZYO9I', 'CYUKZA6K9HUGZ4IW', 'OGVN93OF72RN9K91', 'H6M076PAQE1TS55X']
 symbols = json.load(open('symbols.json'))
-url_format = ['https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=', '&apikey=']
+url_format = ['https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&outputsize=full&symbol=', '&apikey=']
 directory_name = 'data'
 
 
@@ -44,7 +44,7 @@ def simplify_dict(response: dict, fields: list) -> list:
 
 
 def request_api(link: str, save_name: str) -> int:
-    fields = ['date', 'open', 'high', 'low']
+    fields = ['date', 'open', 'close']
     response = requests.get(link)
     response = response.json()
     if not valid_file(response):
