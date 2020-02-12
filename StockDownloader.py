@@ -50,7 +50,7 @@ def request_api(link: str, save_name: str) -> int:
     if not valid_file(response):
         return 1
     response = response["Time Series (Daily)"]
-    return save_file(directory_name + "/" + save_name, simplify_dict(response, fields), fields)
+    return save_file(directory_name + "/" + save_name, simplify_dict(response, fields)[::-1], fields)
 
 
 def valid_file(json_file: dict) -> bool:
