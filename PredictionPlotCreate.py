@@ -1,10 +1,8 @@
 import pandas as pd
-import plotly.graph_objects as go
 import os
-import plotly.io as pio
 import matplotlib.pyplot as plt
 
-
+#create plot with given x,y,path to save plot and name of ylabel
 def plotCreate(x, y, finalPath, type):
     date = 'date'
     plt.clf()
@@ -24,6 +22,7 @@ def createPredictionImages(CSVPath, type):
     index = CSVPath[5:-4]
     date = 'date'
     df = pd.read_csv(CSVPath)
+    #we create plot with 40 days, one day should be predicted
     for i in range(int(len(df.index) / 50)):
         # first create without predicting value
         tmp = df.iloc[i * 50:int(size * 4 / 5 + i * 50) + 1]
@@ -41,15 +40,30 @@ def createPredictionImages(CSVPath, type):
 
 
 # createPredictionImages('data/PIH.csv', 'close')
+
 path = 'data/'
+progresFile='progres.txt'
+
+with open(progresFile) as t:
+    content = t.readlines()
+content = [x.strip() for x in content]
+#content have list of csv already done
 files = []
+#files is list of all csv in data folder
 # r=root, d=directories, f = files
 for r, d, f in os.walk(path):
     for file in f:
         if '.csv' in file:
             files.append(os.path.join(r, file))
 
+progres = open(progresFile,"a+")
 for f in files:
-    createPredictionImages(f, 'open')
-    createPredictionImages(f, 'close')
-    print("wydrukowano obrazki dla " + f)
+    if not f in content:
+        createPredictionImages(f, 'open')
+        createPredictionImages(f, 'close')
+        print("wydrukowano obrazki dla " + f)
+        progres = open(progresFile, "a+")
+        progres.write(f + '\n')
+        progres.close()
+    else:
+        print(f + "juz stworzone")
