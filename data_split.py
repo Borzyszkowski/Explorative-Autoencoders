@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
 #create plot with given x,y,path to save plot and name of ylabel
@@ -17,15 +18,13 @@ def createSplit(CSVPath, type,x_train,x_test,y_train,y_test):
         # first create without predicting value
         tmp = df.iloc[i * 50:int(size * 4 / 5 + i * 50) + 1]
         tmp.reset_index()
-        minValue = tmp[type][0:-1].min()
-        y = tmp[type][0:-1] - minValue
+        y = tmp.loc[0:-1, "open" : "close"]
         firstDate = tmp[date][i * 50]
-        z=y.tolist()
         if firstDate < "2018-01-01":
-            x_train.append(y.tolist())
+            x_train.append(y.values.tolist())
         else:
-            x_test.append(y.tolist())
-        y = tmp[type].iloc[-1] - minValue
+            x_test.append(y.values.tolist())
+        y = tmp["open"].iloc[-1]
         if firstDate < "2018-01-01":
             y_train.append(y)
         else:
@@ -33,11 +32,7 @@ def createSplit(CSVPath, type,x_train,x_test,y_train,y_test):
     return
 
 
-
-
-# createPredictionImages('data/PIH.csv', 'close')
-
-path = 'data/'
+path = 'data2/'
 
 #content have list of csv already done
 files = []
@@ -50,5 +45,8 @@ for r, d, f in os.walk(path):
 x_train,x_test,y_train,y_test=[],[],[],[]
 for f in files:
     createSplit(f, 'open',x_train,x_test,y_train,y_test)
-    createSplit(f, 'close',x_train,x_test,y_train,y_test)
     print(" dodano " + f)
+scaler = MinMaxScaler(0,1)
+x_train,y_train = scaler.fit_transform(x_train,y_train)
+
+
