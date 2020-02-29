@@ -3,7 +3,11 @@ import os
 from sklearn.preprocessing import MinMaxScaler
 import numpy
 import matplotlib.pyplot as plt
-
+import tensorflow as tf
+from tensorflow.keras.models import *
+from tensorflow.keras.layers import *
+from tensorflow.keras import backend as K
+import random
 #create plot with given x,y,path to save plot and name of ylabel
 
 # type is 'open' or 'close', finalPath should be company name, it will be added first date and type
@@ -53,8 +57,8 @@ def normalise_x(train, test):
     max_close = max[1]
     max1 = numpy.amax(test, axis=1)
     max1 = numpy.amax(max1, axis=0)
-    max1_open = max[0]
-    max1_close = max[1]
+    max1_open = max1[0]
+    max1_close = max1[1]
     if max1_open > max_open:
         max_open = max1_open
     if max1_close > max_close:
@@ -78,8 +82,36 @@ def normalise_y(train, test):
     test = test/max
     return train,test
 
+def AutoEncoder(x_train,x_test,y_train,y_test):
+    tf.random.set_seed(33)
+    os.environ['PYTHONHASHSEED'] = str(33)
+    numpy.random.seed(33)
+    random.seed(33)
 
-path = 'data/'
+    session_conf = tf.compat.v1.ConfigProto(
+        intra_op_parallelism_threads=1,
+        inter_op_parallelism_threads=1
+    )
+    sess = tf.compat.v1.Session(
+        graph=tf.compat.v1.get_default_graph(),
+        config=session_conf
+    )
+    tf.compat.v1.keras.backend.set_session(sess)
+
+    ### DEFINE FORECASTER ###
+    inputs1 = Input(shape=(x_train.shape[1], x_train.shape[2]))
+    lstm1 = LSTM(128, return_sequences=True, dropout=0.3)(inputs1, training=True)
+    lstm1 = LSTM(32, return_sequences=False, dropout=0.3)(lstm1, training=True)
+    dense1 = Dense(50)(lstm1)
+    out1 = Dense(1)(dense1)
+
+    model1 = Model(inputs1, out1)
+    model1.compile(loss='mse', optimizer='adam', metrics=['mse'])
+
+    ### FIT FORECASTER ###
+    history = model1.fit(x_train, y_train, epochs=30, batch_size=128, verbose=2, shuffle=True)
+
+path = 'data2/'
 
 #content have list of csv already done
 files = []
@@ -102,3 +134,4 @@ y_test = numpy.array(y_test)
 
 x_train, x_test = normalise_x(x_train, x_test)
 y_train, y_test = normalise_y(y_train,y_test)
+AutoEncoder(x_train,x_test,y_train,y_test)
