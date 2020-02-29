@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 from sklearn.preprocessing import MinMaxScaler
+import numpy
 import matplotlib.pyplot as plt
 
 #create plot with given x,y,path to save plot and name of ylabel
@@ -18,7 +19,7 @@ def createSplit(CSVPath, type,x_train,x_test,y_train,y_test):
         # first create without predicting value
         tmp = df.iloc[i * 50:int(size * 4 / 5 + i * 50) + 1]
         tmp.reset_index()
-        y = tmp.loc[0:-1, "open" : "close"]
+        y = tmp[["open" , "close"]][0:-1]
         firstDate = tmp[date][i * 50]
         if firstDate < "2018-01-01":
             x_train.append(y.values.tolist())
@@ -31,6 +32,20 @@ def createSplit(CSVPath, type,x_train,x_test,y_train,y_test):
             y_test.append(y)
     return
 
+def normalize(train,test):
+    min = numpy.amin(train)
+    min1 = numpy.amin(test)
+    if min1<min:
+        min=min1
+    train= train-min
+    test = test-min
+    max = numpy.amax(train)
+    max1 = numpy.amax(train)
+    if max1>max:
+        max=max1
+    train = train/max
+    test = test/max
+    return train,test
 
 path = 'data2/'
 
@@ -46,7 +61,8 @@ x_train,x_test,y_train,y_test=[],[],[],[]
 for f in files:
     createSplit(f, 'open',x_train,x_test,y_train,y_test)
     print(" dodano " + f)
-scaler = MinMaxScaler(0,1)
-x_train,y_train = scaler.fit_transform(x_train,y_train)
+x_train, x_test = normalize(x_train, x_test)
+y_train, y_test = normalize(y_train,y_test)
+
 
 
