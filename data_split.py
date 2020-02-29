@@ -32,7 +32,38 @@ def createSplit(CSVPath, type,x_train,x_test,y_train,y_test):
             y_test.append(y)
     return
 
-def normalize(train,test):
+def normalise_x(train, test):
+    min = numpy.amin(train, axis=1)
+    min = numpy.amin(min, axis=0)
+    min_open = min[0]
+    min_close = min[1]
+    min1 = numpy.amin(test, axis=1)
+    min1 = numpy.amin(min1, axis=0)
+    min1_open = min1[0]
+    min1_close = min1[1]
+    if min1_open < min_open:
+        min_open = min1_open
+    if min1_close < min_close:
+        min_close = min1_close
+    train = train - [min_open, min_close]
+    test = test - [min_open, min_close]
+    max = numpy.amax(train, axis=1)
+    max = numpy.amax(max, axis=0)
+    max_open = max[0]
+    max_close = max[1]
+    max1 = numpy.amax(test, axis=1)
+    max1 = numpy.amax(max1, axis=0)
+    max1_open = max[0]
+    max1_close = max[1]
+    if max1_open > max_open:
+        max_open = max1_open
+    if max1_close > max_close:
+        max_close = max1_close
+    train = train / [max_open, max_close]
+    test = test / [max_open, max_close]
+    return train, test
+
+def normalise_y(train, test):
     min = numpy.amin(train)
     min1 = numpy.amin(test)
     if min1<min:
@@ -47,7 +78,8 @@ def normalize(train,test):
     test = test/max
     return train,test
 
-path = 'data2/'
+
+path = 'data/'
 
 #content have list of csv already done
 files = []
@@ -61,8 +93,12 @@ x_train,x_test,y_train,y_test=[],[],[],[]
 for f in files:
     createSplit(f, 'open',x_train,x_test,y_train,y_test)
     print(" dodano " + f)
-x_train, x_test = normalize(x_train, x_test)
-y_train, y_test = normalize(y_train,y_test)
 
 
+x_train = numpy.array(x_train)
+x_test = numpy.array(x_test)
+y_train = numpy.array(y_train)
+y_test = numpy.array(y_test)
 
+x_train, x_test = normalise_x(x_train, x_test)
+y_train, y_test = normalise_y(y_train,y_test)
