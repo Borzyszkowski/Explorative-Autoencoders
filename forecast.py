@@ -8,6 +8,7 @@ from tensorflow.keras.models import *
 from tensorflow.keras.layers import *
 from tensorflow.keras import backend as K
 import random
+from pandas import DataFrame
 
 #create plot with given x,y,path to save plot and name of ylabel
 
@@ -84,44 +85,6 @@ def normalise_y(train, test):
     return train,test, min_t, max_t
 
 
-'''path = 'data/'
-
-#content have list of csv already done
-files = []
-#files is list of all csv in data folder
-# r=root, d=directories, f = files
-for r, d, f in os.walk(path):
-    for file in f:
-        if '.csv' in file:
-            files.append(os.path.join(r, file))
-x_train,x_test,y_train,y_test=[],[],[],[]
-for f in files:
-    createSplit(f, 'open',x_train,x_test,y_train,y_test)
-    print(" dodano " + f)'''
-
-
-'''x_train = numpy.asarray(x_train)
-x_test = numpy.asarray(x_test)
-y_train = numpy.asarray(y_train)
-y_test = numpy.asarray(y_test)
-
-
-x_train, x_test = normalise_x(x_train, x_test)
-y_train, y_test = normalise_y(y_train,y_test)
-y_train = y_train.reshape((y_train.shape[0], 1, 1))
-y_test = y_test.reshape((y_test.shape[0], 1, 1))'''
-
-'''inputs1 = Input(shape=(x_train.shape[1], x_train.shape[2]))
-lstm1 = LSTM(128, return_sequences=True, dropout=0.3)(inputs1, training=True)
-lstm1 = LSTM(32, return_sequences=False, dropout=0.3)(lstm1, training=True)
-dense1 = Dense(50)(lstm1)
-out1 = Dense(1)(dense1)
-
-model1 = Model(inputs1, out1)
-model1.compile(loss='mse', optimizer='adam', metrics=['mse'])
-
-history = model1.fit(x_train, y_train, epochs=30, batch_size=10, verbose=1)'''
-
 def AutoEncoder(x_train,x_test,y_train,y_test,x_val,y_val):
     tf.random.set_seed(33)
     os.environ['PYTHONHASHSEED'] = str(33)
@@ -146,13 +109,38 @@ def AutoEncoder(x_train,x_test,y_train,y_test,x_val,y_val):
     out1 = Dense(1)(dense1)
 
     model1 = Model(inputs1, out1)
-    model1.compile(loss='mape', optimizer='adam', metrics=['mse'])
+    model1.compile(loss="mape", optimizer='adam', metrics=['mse'])
 
     ### FIT FORECASTER ###
-    history = model1.fit(x_train, y_train, epochs=1, batch_size=128, verbose=2, shuffle=True)
+    history = model1.fit(x_train, y_train, epochs=30, batch_size=128, verbose=2, shuffle=True)
     return model1.predict(x_test)
 
-path = 'data/'
+
+def metrics(df: DataFrame):
+    df['y_pred_diff'] = df.last_day - df.y_pred
+    df['y_true_diff'] = df.last_day - df.y_true
+    df['sign_pred'] = df.y_pred_diff.apply(numpy.sign)
+    df['sign_true'] = df.y_true_diff.apply(numpy.sign)
+    df['is_correct'] = 0
+    df.loc[df.sign_pred * df.sign_true> 0,'is_correct'] = 1
+    df['result'] = df.y_true_diff * df.sign_pred
+
+    return df
+
+def score(df):
+    scorecard = pd.Series()
+    y_dif = abs(df.y_pred_diff - df.y_true_diff)
+    scorecard.loc["accuracy"] = df.is_correct.sum()*100.0 / len(df.index)
+    scorecard.loc["edge"] =df.result.mean()
+    scorecard.loc["noise"] =numpy.mean(y_dif)
+    scorecard.loc['y_true_chg'] = df.y_true.abs().mean()
+    scorecard.loc['y_pred_chg'] = df.y_pred.abs().mean()
+    scorecard.loc['prediction_calibration'] = scorecard.loc['y_pred_chg'] / scorecard.loc['y_true_chg']
+    scorecard.loc["capture_ratio"] = scorecard.loc['edge'] / scorecard.loc['y_true_chg']*100
+
+    return scorecard
+
+path = 'data3/'
 
 # content have list of csv already done
 files = []
@@ -201,4 +189,5 @@ df['y_pred'] = y_pred
 df['y_true'] = y_true
 df['last_day'] = last_day
 
-print(df)
+metrics(df)
+print(score(df))
